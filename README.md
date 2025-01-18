@@ -1,11 +1,16 @@
 # User DP API
 
-This is a simple Flask App using PSQL.
+This is a simple Flask App using API endpoints and Psycopg to interact with a PSQL database.  It allows for the easy CRUD'ing of users in a user database.
 
 ![User App](img/screenshot.png)
 
+## Tech Stack
 
-Setup
+- **Flask**: Flask is a lightweight WSGI web application framework. It is designed to make getting started quick and easy, with the ability to scale up to complex applications.
+
+- **PostgreSQL**: PSQL is a free and open-source relational database management system (RDBMS) emphasizing extensibility and SQL compliance.  It supports all major operating systems and handles a range of workloads from single machines to data warehouses, data lakes,[14] or web services with many concurrent users.
+
+## Setup
 1. Clone down this repo
 2. Set up a virtual environment and install requirements
 
