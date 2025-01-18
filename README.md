@@ -2,6 +2,9 @@
 
 This is a simple Flask App using PSQL.
 
+![User App](img/screenshot.png)
+
+
 Setup
 1. Clone down this repo
 2. Set up a virtual environment and install requirements
