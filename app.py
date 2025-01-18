@@ -9,10 +9,11 @@ CORS(app)
 
 # Configuring PostgreSQL database
 DATABASE_CONFIG = {
-    'dbname': 'flask_user_db',
-    'user': 'jdcb',
-    'host': 'localhost',
-    'port': 5432
+    'dbname': os.getenv('POSTGRES_DB'),
+    'user': os.getenv('POSTGRES_USER'),
+    'password': os.getenv('POSTGRES_PASSWORD'),
+    'host': os.getenv('POSTGRES_HOST'),
+    'port': int(os.getenv('POSTGRES_PORT'))
 }
 
 def get_db_connection():
