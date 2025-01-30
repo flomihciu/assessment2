@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
-        const API_URL = 'http://localhost:5000';
+        const API_URL = 'http://localhost:8000';  // API URL for backend
 
         // Fetch and display all users
         function fetchUsers() {
@@ -61,7 +61,7 @@
                 data: JSON.stringify({ name, email, age }),
                 success: function() {
                     $('#addUserForm')[0].reset();
-                    fetchUsers();
+                    fetchUsers();  // Reload the user list after adding
                 }
             });
         }
@@ -90,7 +90,7 @@
                 data: JSON.stringify({ name, email, age }),
                 success: function() {
                     $('#editUserModal').modal('hide');
-                    fetchUsers();
+                    fetchUsers();  // Reload the user list after updating
                 }
             });
         }
@@ -102,7 +102,7 @@
                 url: API_URL + `/users/${userId}`,
                 type: 'DELETE',
                 success: function() {
-                    fetchUsers();
+                    fetchUsers();  // Reload the user list after deletion
                 }
             });
         }
@@ -170,3 +170,4 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
+
