@@ -1,0 +1,141 @@
+---
+- name: Setup Flask Application with Gunicorn
+  hosts: ec2
+  become: yes
+  vars:
+    git_username: "flomihciu"
+    repo_url: "git@github.com:flomihciu/assessment2.git"
+    ssh_key_path: "/home/ubuntu/.ssh/id_rsa"
+    app_directory: "/home/ubuntu/user-db-flask"
+    gunicorn_bind: "0.0.0.0:8000"
+    gunicorn_workers: 4 
+    postgres_host: "{{ groups['rds'][0] }}"
+    postgres_db: "mydatabase"
+    postgres_user: "flo"
+    postgres_password: "password123"
+  tasks:
+    - name: Ensure SSH key pair exists on local machine
+      delegate_to: localhost
+      become: false
+      ansible.builtin.openssh_keypair:
+        path: ~/.ssh/id_rsa
+        type: rsa
+        size: 4096
+
+    - name: Read the local public key
+      delegate_to: localhost
+      become: false
+      slurp:
+        src: ~/.ssh/id_rsa.pub
+      register: ssh_pub_key
+
+    - name: Ensure ~/.ssh directory exists on remote server
+      file:
+        path: /home/ubuntu/.ssh
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0700'
+
+    - name: Add SSH public key to authorized_keys on remote server
+      lineinfile:
+        path: /home/ubuntu/.ssh/authorized_keys
+        line: "{{ ssh_pub_key['content'] | b64decode }}"
+
+    - name: Copy private SSH key to the remote server
+      copy:
+        src: ~/.ssh/id_rsa
+        dest: /home/ubuntu/.ssh/id_rsa
+        owner: ubuntu
+        group: ubuntu
+        mode: '0600'
+
+    - name: Install Git
+      apt:
+        name: git
+        state: present
+        update_cache: yes
+
+    - name: Install PostgreSQL client
+      apt:
+        name: postgresql-client
+        state: present
+        update_cache: yes
+
+    - name: Clone Flask application repository using SSH
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_directory }}"
+        key_file: /home/ubuntu/.ssh/id_rsa
+        accept_hostkey: yes
+        clone: yes
+        update: yes
+        force: yes
+
+    - name: Install system dependencies for PostgreSQL
+      apt:
+        name: libpq-dev
+        state: present
+        update_cache: yes
+
+    - name: Create virtual environment
+      command:
+        cmd: python3 -m venv {{ app_directory }}/venv
+        creates: "{{ app_directory }}/venv/bin/activate"
+
+    - name: Install Gunicorn in virtual environment
+      pip:
+        name: gunicorn
+        virtualenv: "{{ app_directory }}/venv"
+        state: present
+
+    - name: Install python-dotenv in virtual environment
+      pip:
+        name: python-dotenv
+        virtualenv: "{{ app_directory }}/venv"
+        state: present
+
+    - name: Ensure requirements.txt exists on remote server
+      stat:
+        path: "{{ app_directory }}/requirements.txt"
+      register: requirements_file
+
+    - name: Install Python dependencies from requirements.txt
+      pip:
+        requirements: "{{ app_directory }}/requirements.txt"
+        virtualenv: "{{ app_directory }}/venv"
+        virtualenv_command: python3 -m venv
+      when: requirements_file.stat.exists
+
+    - name: Configure .env file with PostgreSQL and other environment variables
+      copy:
+        dest: "{{ app_directory }}/.env"
+        content: |
+          POSTGRES_DB={{ postgres_db }}
+          POSTGRES_USER={{ postgres_user }}
+          POSTGRES_PASSWORD={{ postgres_password }}
+          POSTGRES_HOST={{ postgres_host }}
+          POSTGRES_PORT=5432
+          DATABASE_URI=postgresql+psycopg2://{{ postgres_user }}:{{ postgres_password }}@{{ postgres_host }}/{{ postgres_db }}
+          SECRET_KEY=supersecretkey
+
+    - name: Create Gunicorn service file
+      copy:
+        dest: /etc/systemd/system/gunicorn.service
+        content: |
+          [Unit]
+          Description=gunicorn daemon for user-db-flask
+          After=network.target
+          [Service]
+          User=ubuntu
+          Group=ubuntu
+          WorkingDirectory={{ app_directory }}
+          ExecStart={{ app_directory }}/venv/bin/gunicorn --workers={{ gunicorn_workers }} --bind={{ gunicorn_bind }} app:app
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Start and enable Gunicorn service
+      systemd:
+        name: gunicorn
+        state: started
+        enabled: yes
