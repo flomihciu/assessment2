@@ -9,6 +9,12 @@ This is a simple Flask App using API endpoints and Psycopg to interact with a PS
 - **Flask**: Flask is a lightweight WSGI web application framework. It is designed to make getting started quick and easy, with the ability to scale up to complex applications.
 
 - **PostgreSQL**: PSQL is a free and open-source relational database management system (RDBMS) emphasizing extensibility and SQL compliance.  It supports all major operating systems and handles a range of workloads from single machines to data warehouses, data lakes,[14] or web services with many concurrent users.
+  
+- **Flask**: Flask is a lightweight WSGI web application framework. It is designed to make getting started quick and easy, with the ability to scale up to complex applications.
+  
+- **Terraform**: Terraform is an Infrastructure as Code (IaC) tool used for provisioning and managing cloud resources. It enables you to define infrastructure (such as servers, databases, and networking) using declarative configuration files. Terraform supports multiple cloud providers (AWS, Azure, GCP) and allows for automation, scalability, and consistency in infrastructure deployment.
+  
+- **Ansible**: Ansible is a configuration management and automation tool used for managing servers, deploying applications, and orchestrating IT tasks. It operates in an agentless manner, using SSH or WinRM to communicate with remote systems. Ansible is useful for automating system configuration, software installation, and continuous deployment.
 
 # Setting up Ansible and Terraform locally if necessary:
 	sudo apt update
