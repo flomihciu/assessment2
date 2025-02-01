@@ -9,13 +9,13 @@ app = Flask(__name__)
 # Allow requests from all origins (adjust this for production)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Configuring PostgreSQL database using environment variables or hardcoded values
+# Hardcoded PostgreSQL database configuration
 DATABASE_CONFIG = {
-    'dbname': os.getenv('POSTGRES_DB', 'mydatabase'),  # Default to 'mydatabase' if not set
-    'user': os.getenv('POSTGRES_USER', 'flo'),  # Default to 'flo' if not set
-    'password': os.getenv('POSTGRES_PASSWORD', 'password123'),  # Default to 'password123' if not set
-    'host': os.getenv('POSTGRES_HOST', 'terraform-20250127232957834800000001.cvyw6igek2bp.us-east-1.rds.amazonaws.com'),  # RDS endpoint (default if not set)
-    'port': int(os.getenv('POSTGRES_PORT', 5432))  # Default to 5432 if not set (standard PostgreSQL port)
+    'dbname': 'mydatabase',  # Hardcoded database name
+    'user': 'flo',  # Hardcoded username
+    'password': 'password123',  # Hardcoded password
+    'host': 'terraform-20250127232957834800000001.cvyw6igek2bp.us-east-1.rds.amazonaws.com',  # RDS endpoint
+    'port': 5432  # Default PostgreSQL port
 }
 
 def get_db_connection():
@@ -32,7 +32,7 @@ def init_user_db():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("DROP TABLE IF EXISTS users;")
-    cursor.execute("""
+    cursor.execute(""" 
         CREATE TABLE users (
             user_id SERIAL PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
@@ -180,3 +180,4 @@ if __name__ == '__main__':
     # Remove init_user_db() from here for production
     # init_user_db()  # You should only run this once for initial setup
     app.run(host="0.0.0.0", port=8000)
+
