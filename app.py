@@ -94,6 +94,8 @@ def add_user():
     email = request.json['email']
     age = request.json.get('age')
 
+    print(f"Adding user: {name}, {email}, {age}")  # Log the data received
+
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -104,7 +106,7 @@ def add_user():
         new_user = cursor.fetchone()
         conn.commit()
     except Exception as e:
-        print(f"Error executing query: {e}")
+        print(f"Error executing query: {e}")  # Print error to logs
         conn.rollback()
         abort(500)
     finally:
@@ -112,6 +114,7 @@ def add_user():
         conn.close()
 
     return jsonify({'user': new_user}), 201
+
 
 @app.route('/users/<int:user_id>', methods=['PUT'])
 def update_user(user_id):
