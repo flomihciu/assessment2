@@ -14,7 +14,7 @@ DATABASE_CONFIG = {
     'dbname': 'mydatabase',  # Hardcoded database name
     'user': 'flo',  # Hardcoded username
     'password': 'password123',  # Hardcoded password
-    'host': 'terraform-20250127232957834800000001.cvyw6igek2bp.us-east-1.rds.amazonaws.com',  # RDS endpoint
+    'host': 'terraform-20250201154520043300000002.cvyw6igek2bp.us-east-1.rds.amazonaws.com',  # RDS endpoint
     'port': 5432  # Default PostgreSQL port
 }
 
