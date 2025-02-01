@@ -1,133 +1,174 @@
-from flask import Flask, jsonify, abort, request, make_response, send_from_directory
-from flask_cors import CORS
-import psycopg2
-from psycopg2.extras import RealDictCursor
-import os
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        // Update this line to use the public EC2 IP address for your backend
+        const API_URL = 'http://3.217.28.40:8000';  // Update with EC2 public IP address
 
-app = Flask(__name__)
-CORS(app)
+        // Fetch and display all users
+        function fetchUsers() {
+            $.getJSON(API_URL + '/users', function(data) {
+                const users = data.users;
+                let output = `
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Age</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                users.forEach(user => {
+                    output += `
+                        <tr>
+                            <td>${user.user_id}</td>
+                            <td>${user.name}</td>
+                            <td>${user.email}</td>
+                            <td>${user.age || 'N/A'}</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm edit-btn" data-id="${user.user_id}" data-toggle="modal" data-target="#editUserModal">Edit</button>
+                                <button class="btn btn-danger btn-sm delete-btn" data-id="${user.user_id}">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                output += '</tbody></table>';
+                $('#userList').html(output);
 
-# Configuring PostgreSQL database
-DATABASE_CONFIG = {
-    'dbname': os.getenv('POSTGRES_DB'),
-    'user': os.getenv('POSTGRES_USER'),
-    'password': os.getenv('POSTGRES_PASSWORD'),
-    'host': os.getenv('POSTGRES_HOST'),
-    'port': int(os.getenv('POSTGRES_PORT'))
-}
+                // Attach event handlers for edit and delete buttons
+                $('.edit-btn').click(showEditUserModal);
+                $('.delete-btn').click(deleteUser);
+            });
+        }
 
-def get_db_connection():
-    return psycopg2.connect(**DATABASE_CONFIG, cursor_factory=RealDictCursor)
+        // Add a new user
+        function addUser() {
+            const name = $('#addName').val();
+            const email = $('#addEmail').val();
+            const age = $('#addAge').val();
+            $.ajax({
+                url: API_URL + '/users',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ name, email, age }),
+                success: function() {
+                    $('#addUserForm')[0].reset();
+                    fetchUsers();  // Reload the user list after adding
+                }
+            });
+        }
 
-def init_user_db():
-    """Initialize the user database."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DROP TABLE IF EXISTS users;")
-    cursor.execute("""
-        CREATE TABLE users (
-            user_id SERIAL PRIMARY KEY,
-            name VARCHAR(100) NOT NULL,
-            email VARCHAR(100) UNIQUE NOT NULL,
-            age INT
-        );
-    """)
-    conn.commit()
-    cursor.close()
-    conn.close()
+        // Show the edit user modal with pre-filled data
+        function showEditUserModal() {
+            const userId = $(this).data('id');
+            $.getJSON(API_URL + `/users/${userId}`, function(data) {
+                $('#editUserId').val(data.user.user_id);
+                $('#editName').val(data.user.name);
+                $('#editEmail').val(data.user.email);
+                $('#editAge').val(data.user.age);
+            });
+        }
 
-@app.route('/')
-def serve_index():
-    """Serve the HTML front-end"""
-    return send_from_directory(os.getcwd(), 'index.html')
+        // Edit an existing user
+        function editUser() {
+            const userId = $('#editUserId').val();
+            const name = $('#editName').val();
+            const email = $('#editEmail').val();
+            const age = $('#editAge').val();
+            $.ajax({
+                url: API_URL + `/users/${userId}`,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({ name, email, age }),
+                success: function() {
+                    $('#editUserModal').modal('hide');
+                    fetchUsers();  // Reload the user list after updating
+                }
+            });
+        }
 
-@app.route('/users', methods=['GET'])
-def get_users():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users;")
-    users = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return jsonify({'users': users})
+        // Delete a user
+        function deleteUser() {
+            const userId = $(this).data('id');
+            $.ajax({
+                url: API_URL + `/users/${userId}`,
+                type: 'DELETE',
+                success: function() {
+                    fetchUsers();  // Reload the user list after deletion
+                }
+            });
+        }
 
-@app.route('/users/<int:user_id>', methods=['GET'])
-def get_user(user_id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE user_id = %s;", (user_id,))
-    user = cursor.fetchone()
-    cursor.close()
-    conn.close()
-    if user is None:
-        abort(404)
-    return jsonify({'user': user})
+        // Initialize the page
+        $(document).ready(function() {
+            fetchUsers();
+            $('#addUserForm').submit(function(e) {
+                e.preventDefault();
+                addUser();
+            });
+            $('#editUserForm').submit(function(e) {
+                e.preventDefault();
+                editUser();
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">User Management</h1>
+        <div id="userList" class="mt-4"></div>
 
-@app.route('/users', methods=['POST'])
-def add_user():
-    if not request.json or 'name' not in request.json or 'email' not in request.json:
-        abort(400)
+        <!-- Add User Form -->
+        <h2>Add User</h2>
+        <form id="addUserForm" class="form-inline">
+            <input type="text" id="addName" class="form-control mr-2" placeholder="Name" required>
+            <input type="email" id="addEmail" class="form-control mr-2" placeholder="Email" required>
+            <input type="number" id="addAge" class="form-control mr-2" placeholder="Age">
+            <button type="submit" class="btn btn-success">Add User</button>
+        </form>
 
-    name = request.json['name']
-    email = request.json['email']
-    age = request.json.get('age')
+        <!-- Edit User Modal -->
+        <div class="modal fade" id="editUserModal" tabindex="-1" role="dialog" aria-labelledby="editUserModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editUserForm">
+                            <input type="hidden" id="editUserId">
+                            <div class="form-group">
+                                <label for="editName">Name</label>
+                                <input type="text" id="editName" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editEmail">Email</label>
+                                <input type="email" id="editEmail" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editAge">Age</label>
+                                <input type="number" id="editAge" class="form-control">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO users (name, email, age) VALUES (%s, %s, %s) RETURNING *;",
-        (name, email, age)
-    )
-    new_user = cursor.fetchone()
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return jsonify({'user': new_user}), 201
-
-@app.route('/users/<int:user_id>', methods=['PUT'])
-def update_user(user_id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE user_id = %s;", (user_id,))
-    user = cursor.fetchone()
-    if user is None:
-        abort(404)
-
-    name = request.json.get('name', user['name'])
-    email = request.json.get('email', user['email'])
-    age = request.json.get('age', user['age'])
-
-    cursor.execute(
-        "UPDATE users SET name = %s, email = %s, age = %s WHERE user_id = %s RETURNING *;",
-        (name, email, age, user_id)
-    )
-    updated_user = cursor.fetchone()
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return jsonify({'user': updated_user})
-
-@app.route('/users/<int:user_id>', methods=['DELETE'])
-def delete_user(user_id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM users WHERE user_id = %s RETURNING user_id;", (user_id,))
-    deleted_user = cursor.fetchone()
-    conn.commit()
-    cursor.close()
-    conn.close()
-    if deleted_user is None:
-        abort(404)
-    return jsonify({'result': True})
-
-@app.errorhandler(404)
-def not_found(error):
-    return make_response(jsonify({'error': 'Not found'}), 404)
-
-@app.errorhandler(400)
-def bad_request(error):
-    return make_response(jsonify({'error': 'Bad request'}), 400)
-
-if __name__ == '__main__':
-    init_user_db()
-    app.run(host="0.0.0.0", port=8000)
