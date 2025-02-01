@@ -7,21 +7,25 @@ import os
 app = Flask(__name__)
 
 # Allow requests from all origins (adjust this for production)
-CORS(app, resources={r"/*": {"origins": "http://3.217.28.40:8000"}})
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Configuring PostgreSQL database
+# Configuring PostgreSQL database using environment variables or hardcoded values
 DATABASE_CONFIG = {
-    'dbname': os.getenv('POSTGRES_DB'),
-    'user': os.getenv('POSTGRES_USER'),
-    'password': os.getenv('POSTGRES_PASSWORD'),
-    'host': os.getenv('POSTGRES_HOST'),
-    'port': int(os.getenv('POSTGRES_PORT'))
+    'dbname': os.getenv('POSTGRES_DB', 'mydatabase'),  # Default to 'mydatabase' if not set
+    'user': os.getenv('POSTGRES_USER', 'flo'),  # Default to 'flo' if not set
+    'password': os.getenv('POSTGRES_PASSWORD', 'password123'),  # Default to 'password123' if not set
+    'host': os.getenv('POSTGRES_HOST', 'terraform-20250127232957834800000001.cvyw6igek2bp.us-east-1.rds.amazonaws.com'),  # RDS endpoint (default if not set)
+    'port': int(os.getenv('POSTGRES_PORT', 5432))  # Default to 5432 if not set (standard PostgreSQL port)
 }
 
 def get_db_connection():
     """Establishes and returns a database connection."""
-    conn = psycopg2.connect(**DATABASE_CONFIG, cursor_factory=RealDictCursor)
-    return conn
+    try:
+        conn = psycopg2.connect(**DATABASE_CONFIG, cursor_factory=RealDictCursor)
+        return conn
+    except Exception as e:
+        print(f"Error connecting to database: {e}")
+        abort(500)
 
 def init_user_db():
     """Initialize the user database (run only once, not in production)."""
