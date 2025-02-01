@@ -7,7 +7,7 @@ import os
 app = Flask(__name__)
 
 # Allow requests from all origins (adjust this for production)
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": "http://3.217.28.40:8000"}})
 
 # Configuring PostgreSQL database
 DATABASE_CONFIG = {
