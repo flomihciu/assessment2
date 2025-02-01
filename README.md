@@ -1,4 +1,4 @@
-# User DB API
+# Flo Assessment2 User DB API
 
 This is a simple Flask App using API endpoints and Psycopg to interact with a PSQL database.  It allows for the easy CRUD'ing of users in a user database.
 
@@ -10,36 +10,32 @@ This is a simple Flask App using API endpoints and Psycopg to interact with a PS
 
 - **PostgreSQL**: PSQL is a free and open-source relational database management system (RDBMS) emphasizing extensibility and SQL compliance.  It supports all major operating systems and handles a range of workloads from single machines to data warehouses, data lakes,[14] or web services with many concurrent users.
 
-## Setup
-1. Clone down this repo
-2. Set up a virtual environment and install requirements
+#Setting up Ansible and Terraform locally if necessary:
+	sudo apt update
+	sudo apt install terraform
+	terraform -v # to Confirm installation
+	sudo add-apt-repository ppa:ansible/ansible
+	sudo apt update
+	sudo apt install -y ansible
+	ansible --version # to Confirm installation
 
-```bash
-python -m venv my-venv-directory
-pip install -r requirements.txt
-```
-3. Set up your PSQL users and db.  With PSQL service running:
+#Add repository to your control node.
 
-```
-psql -U postgres
-```
-In SQL terminal (password optional):
-```psql
-CREATE DATABASE user_db;
-CREATE USER postgres WITH PASSWORD 'password';
-GRANT ALL PRIVILEGES ON DATABASE user_db TO postgres;
-```
-4. Run the app
-```
-python app.py
-```
+#Setup Terraform after reviewing unique settings and attributes in tf file on repository
+	terraform init
+	terraform apply
+	terraform plan
+	
+#Review Ansible yml file on repo and setup correct settings and attributes
+	ansible-playbook -i inventory.ini sys_depend.yml
 
-## API Documentation
+#Connect to the EC2 instance, change unique information as necessary
+	ssh -i /home/flomihciu/devops/tfdocker/flo-east1.pem ubuntu@3.217.28.40
+	
+#Next, confirm webpage and app are working properly. Afterwards, enjoy your app.
+	sudo systemctl stop gunicorn
+	sudo systemctl daemon-reload
+	sudo systemctl start gunicorn
+	sudo systemctl enable gunicorn
+sudo systemctl status gunicorn![image](https://github.com/user-attachments/assets/08c35c6e-590e-4bc4-8307-28ab67519e65)
 
-| HTTP Method | Endpoint              | Description                  | Request Body | Example Response |
-|-------------|-----------------------|------------------------------|--------------|------------------|
-| GET         | /users                | Retrieves all users          | N/A          | `{"users": [{"user_id": 1, "name": "John Doe", "email": "john@example.com", "age": 30}]}` |
-| GET         | /users/<int:user_id>  | Retrieves a user by ID       | N/A          | `{"user": {"user_id": 1, "name": "John Doe", "email": "john@example.com", "age": 30}}` |
-| POST        | /users                | Creates a new user           | `{"name": "<name>", "email": "<email>", "age": <int>}` | `{"user": {"user_id": 2, "name": "Jane Smith", "email": "jane@example.com", "age": 25}}` |
-| PUT         | /users/<int:user_id>  | Updates an existing user     | `{"name": "<name>", "email": "<email>", "age": <int>}` | `{"user": {"user_id": 2, "name": "Jane Doe", "email": "jane.doe@example.com", "age": 26}}` |
-| DELETE      | /users/<int:user_id>  | Deletes a user by ID         | N/A          | `{"result": true}` |
